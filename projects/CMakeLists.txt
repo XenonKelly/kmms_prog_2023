@@ -13,5 +13,6 @@ add_subdirectory(base_theory_tasks_p1)
 add_subdirectory(obuchaika)
 add_subdirectory(unit_test_example)
 add_subdirectory(obuchaika_with_test)
+add_subdirectory(scl)
 
 set(CMAKE_SUPPRESS_REGENERATION true)
