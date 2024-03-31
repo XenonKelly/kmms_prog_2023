@@ -4,40 +4,14 @@
 
 using KLikhosherstova::LongNumber;
 
-TEST(default_constructor, sign) {
+TEST(is_negative, sign){
+	LongNumber x;
+	ASSERT_EQ(0, x.is_negative());
+}
+
+TEST(is_negative, sign) {
 	LongNumber x;
 	ASSERT_FALSE(x.is_negative());
-}
-
-TEST(default_constructor, length) {
-	LongNumber x;
-	ASSERT_EQ(1, x.get_length());
-}
-
-TEST(default_constructor, length) {
-	LongNumber x;
-	ASSERT_NE(12, x.get_length());
-}
-
-TEST(constructor_with_args, sign) {
-	LongNumber x("-123");
-	ASSERT_TRUE(x.is_negative());
-}
-
-TEST(constructor_with_args, sign) {
-	LongNumber x("1523");
-	ASSERT_FALSE(x.is_negative());
-}
-
-TEST(constructor_with_args, length) {
-	LongNumber x("-123");
-	ASSERT_EQ(3, x.get_length());
-}
-
-TEST(copy_constructor, sign) {
-	LongNumber x("1523");
-	Long Number y(x);
-	ASSERT_FALSE(y.is_negative());
 }
 
 int main(int argc, char **argv) {

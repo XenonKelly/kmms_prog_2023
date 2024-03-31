@@ -7,100 +7,130 @@ using KLikhosherstova::LongNumber;
 
 
 
-LongNumber::LongNumber() {
-	numbers = new int;
-	*numbers = 0;
-	length = 1; 
-	sign = POSITIVE;
+LongNumber::LongNumber() : length(1), sign(POSITIVE) {
+    numbers = new int[length];
+    numbers[0] = 0;
+}
+
+LongNumber::LongNumber(int value) {
+    sign = (value >= 0) ? POSITIVE : NEGATIVE;
+    value = std::abs(value);
+    length = (value == 0) ? 1 : get_length(value);
+    numbers = new int[length];
+    for (int i = 0; i < length; i++) {
+        numbers[i] = value % 10;
+        value /= 10;
+    }
 }
 
 LongNumber::LongNumber(const char* const str) {
-	numbers = new int;
-	*numbers = atoi(str);
+    int str_length = get_length(str);
+    if (str[0] == MINUS) {
+        sign = -1;
+        length = str_length - 1;
+    }
+    else {
+        sign = 1;
+        length = str_length;
+    }
 
-	if (*str == MINUS) {
-		length = strlen(str) - 1; //не видит функцию strlen (возможно, реализовать вручную)
-		sign = NEGATIVE;
-	}
-	else {
-		length = strlen(str);
-		sign = POSITIVE;
-	}
+    numbers = new int[length];
+    for (int i = 0; i < length; i++) {
+        numbers[i] = str[str_length - i - 1] - ZERO;
+    }
 }
 
 LongNumber::LongNumber(const LongNumber& x) {
-	length = x.length;
-	sign = x.sign;
-	numbers = new int;
-	*numbers = *x.numbers;
+    length = x.length;
+    sign = x.sign;
+    numbers = new int[length];
+    for (int i = 0; i < length; i++) {
+        numbers[i] = x.numbers[i];
+    }
 }
 
-LongNumber::LongNumber(LongNumber&& x) : numbers(x.numbers), length(x.length), sign(x.sign) {
-	x.numbers = nullptr;
-	length = 0;
-	sign = POSITIVE;
+LongNumber::LongNumber(LongNumber&& x) {
+    length = x.length;
+    sign = x.sign;
+    numbers = x.numbers;
+    x.numbers = nullptr;
 }
 
 LongNumber::~LongNumber() {
-    if (numbers != nullptr) {
-        length = 0;
-        delete numbers;
-        numbers = nullptr;
-    }
-    else
-        std::cout << "No data" << std::endl;
+    length = 0;
+    delete[] numbers;
+    numbers = nullptr;
 }
 
+
 LongNumber& LongNumber::operator = (const char* const str) {
-    if (numbers)
-        delete numbers;
+    int str_length = get_length(str);
+    if (str[0] == MINUS) {
+        sign = -1;
+        length = str_length - 1;
+    }
+    else {
+        sign = 1;
+        length = str_length;
+    }
 
-    length = strlen(str);
-    numbers = new int;
-    *numbers = atoi(str);
+    delete[] numbers;
+    numbers = new int[length];
+    for (int i = 0; i < length; i++) {
+        numbers[i] = str[str_length - i - 1] - ZERO;
+    }
 
-    if (*str == MINUS)
-        sign = NEGATIVE;
-    else
-        sign = POSITIVE;
+    return *this;
+}
+
+LongNumber& LongNumber::operator = (int value) {
+    sign = (value >= 0) ? POSITIVE : NEGATIVE;
+    value = std::abs(value);
+    length = (value == 0) ? 1 : get_length(value);
+    numbers = new int[length];
+
+    for (int i = 0; i < length; i++) {
+        numbers[i] = value % 10;
+        value /= 10;
+    }
 
     return *this;
 }
 
 LongNumber& LongNumber::operator = (const LongNumber& x) {
-    if (this == &x)
-        return *this;
-    else {
-        length = x.length;
-        sign = x.sign;
-        delete numbers;
-        numbers = new int;
-        for (int i = 0; i < length; i++) {
-            numbers = x.numbers;
-        }
+    if (this == &x) return *this;
+
+    length = x.length;
+    sign = x.sign;
+
+    delete[] numbers;
+    numbers = new int[length];
+    for (int i = 0; i < length; i++) {
+        numbers[i] = x.numbers[i];
     }
+
     return *this;
 }
 
 LongNumber& LongNumber::operator = (LongNumber&& x) {
-    if (&x != this) {
-        delete numbers;
-        numbers = x.numbers;
-        length = x.length;
-        sign = x.sign;
-        x.numbers = nullptr;
-        x.length = 0;
-        x.sign = POSITIVE;
-    }
+    length = x.length;
+    sign = x.sign;
+
+    delete[] numbers;
+    numbers = x.numbers;
+    x.numbers = nullptr;
+
     return *this;
 }
 
-bool LongNumber::operator == (const LongNumber& x) {
+
+
+bool LongNumber::operator == (const LongNumber& x) const {
     if ((sign != x.sign) || (length != x.length)) { return false; }
 
     else {
-        int a = abs(*numbers);
-        int b = abs(*x.numbers);
+        int a = std::abs(to_int(*this));
+        int b = std::abs(to_int(x));
         while ((a > 0) || (b > 0)) {
             if (a % 10 != b % 10) {
                 return false;
@@ -112,14 +142,14 @@ bool LongNumber::operator == (const LongNumber& x) {
     }
 }
 
-bool LongNumber::operator != (const LongNumber& x) { return !operator==(x); }
+bool LongNumber::operator != (const LongNumber& x) const { return !operator==(x); }
 
-bool LongNumber::operator > (const LongNumber& x) {
+bool LongNumber::operator > (const LongNumber& x) const {
 
     if (operator==(x)) { return false; }
 
-    int a = reverse_digits(abs(*numbers));
-    int b = reverse_digits(abs(*x.numbers));
+    int a = reverse_digits(std::abs(to_int(*this)));
+    int b = reverse_digits(std::abs(to_int(x)));
 
     if (sign > x.sign) { return true; }
     else if (sign < x.sign) { return false; }
@@ -127,122 +157,234 @@ bool LongNumber::operator > (const LongNumber& x) {
     else if (((sign < 0) && (length > x.length)) || ((sign > 0) && (length < x.length))) { return false; }
     else {
         while ((a > 0) || (b > 0)) {
-            if (a % 10 < b % 10) {
-                return (sign < 0);
-            }
-            else if (a % 10 > b % 10) { return (sign > 0); }
+            if (a % 10 < b % 10) { return sign < 0; }
+            else if (a % 10 > b % 10) { return sign > 0; }
             a /= 10;
             b /= 10;
         }
+        return false;
     }
 }
 
+bool LongNumber::operator < (const LongNumber& x) const { return !operator>(x); }
 
-bool LongNumber::operator < (const LongNumber& x) { return !operator>(x); }
+LongNumber LongNumber::operator + (const LongNumber& x) const {
+    if ((sign < 0) && (x.sign > 0)) {
+        int a_int = std::abs(to_int(*this));
+        LongNumber a(a_int);
 
+        int b_int = std::abs(to_int(x));
+        LongNumber b(b_int);
 
-LongNumber LongNumber::operator + (const LongNumber& x) {
-    LongNumber result;
-    if (sign != x.sign) { return operator-(x); }
-    int a = abs(*numbers); 
-    int b = abs(*x.numbers);
-    int total_length = std::max(length, x.length);
-    int i = 0;
-    while (i < total_length) {
-        *result.numbers += (int)((((a % 10) + (b % 10)) * pow(10, i)) * (sign));
-        a /= 10;
-        b /= 10;
-        i++;
+        LongNumber result(to_int(b.operator-(a)));
+        return result;
     }
-    result.sign = sign;
-    result.length = get_length(*result.numbers);
-    return result;
-}
 
-LongNumber LongNumber::operator - (const LongNumber& x) {
-    LongNumber result;
-    if (x.sign < 0) { return operator+(x); }
-    int a = abs(*numbers);
-    int b = abs(*x.numbers);
-    int total_length = std::max(length, x.length);
-    int i = 0;
-    while (i < total_length) {
-        *result.numbers += (int)((((a % 10) - (b % 10)) * pow(10, i)) * (sign)); //не видит pow, возможно, так же реализовать вручную 
-        a /= 10;
-        b /= 10;
-        i++;
-    }
-    result.sign = sign;
-    result.length = get_length(*result.numbers);
-    return result;
-
-}
-
-
-LongNumber LongNumber::operator * (const LongNumber& x) {
-    LongNumber result;
-
-    int a = *numbers;
-    int b = *x.numbers;
-    int total_length = std::max(length, x.length);
-    int i = 0;
-    int k = 1;
-    while ((i < total_length) && (k < total_length)) {
-        *result.numbers += (((a * (b % (int)pow(10, k))) * pow(10, i)));
-        b /= 10;
-        i++;
-    }
-    result.sign = sign == x.sign ? POSITIVE : NEGATIVE;
-    result.length = get_length(*result.numbers);
-    return result;
-}
-
-LongNumber LongNumber::operator / (const LongNumber& x) { //переделать, согласно крайним случаям
-    LongNumber result;
-    int a = *numbers;
-    int b = *x.numbers;
-    if (length < x.length) {
-        *result.numbers = 0;
-        result.sign = POSITIVE;
-        result.length = 1;
-    }
-    else if (abs(a) == abs(b)) {
-        *result.numbers = 1;
-        result.sign = std::min(sign, x.sign);
-        result.length = 1;
+    else if ((sign > 0) && (x.sign < 0)) {
+        int b_int = std::abs(to_int(x));
+        LongNumber b(b_int);
+        LongNumber result(operator-(b));
+        return result;
     }
 
     else {
+        int summ = 0;
+        int a = std::abs(to_int(*this));
+        int b = std::abs(to_int(x));
         int total_length = std::max(length, x.length);
-        int i = length - x.length;
-        int point = a / pow(10, length - x.length) >= b ? pow(10, length - x.length) : pow(10, length - x.length - 1); //+-1?
-        *result.numbers += (a / point / b) * pow(10, i);
-        //i--;
-        while (i != 0) {
-
-            int tmp = a / point - (a / point / b) * b;
-            a = (tmp * pow(10, i)) + (a % (int)pow(10, i)); //везде был - 1
-            i--;
-            int len = get_length(a);
-            point = a / pow(10, len - x.length) >= b ? pow(10, len - x.length) : pow(10, len - x.length - 1);
-            if (point == 1) {
-                *result.numbers += (a / point / b) * pow(10, i - 1);
-            }
-            else {
-                *result.numbers += (a / point / b) * pow(10, i);
-            }
-            //*result.numbers += (a / point / b) * pow(10, i);
-            //break;
+        int i = 0;
+        while (i < total_length) {
+            summ += (int)((((a % 10) + (b % 10)) * pow(10, i)));
+            a /= 10;
+            b /= 10;
+            i++;
         }
-        result.sign = sign == x.sign ? POSITIVE : NEGATIVE;
-        result.length = get_length(*result.numbers);
+
+        LongNumber result(summ * (sign));
+        return result;
+    }  
+}
+
+LongNumber LongNumber::operator - (const LongNumber& x) const {
+    if (((sign < 0) && (x.sign > 0)) || ((sign > 0) && (x.sign < 0))) {  
+        int a_int = std::abs(to_int(*this));
+        LongNumber a(a_int);
+
+        int b_int = std::abs(to_int(x));
+        LongNumber b(b_int);
+
+        LongNumber result(to_int(a.operator+(b)));
+        return result;
     }
-    return result;
+
+    else if (sign < 0 && x.sign < 0) {
+        int a_int = std::abs(to_int(*this));
+        LongNumber a(a_int);
+
+        int b_int = std::abs(to_int(x));
+        LongNumber b(b_int);
+
+        LongNumber result(to_int(b.operator-(a)));
+        return result;
+    }
+
+    else {
+        int diff = 0;
+        int a = std::abs(to_int(*this));
+        int b = std::abs(to_int(x));
+        int total_length = std::max(length, x.length);
+        int i = 0;
+
+        while (i < total_length) {
+            diff += (int)((((a % 10) - (b % 10)) * pow(10, i)));
+            a /= 10;
+            b /= 10;
+            i++;
+        }
+
+        LongNumber result(diff * sign);
+        return result;
+    }
 }
 
 
-int LongNumber::reverse_digits(int num)
-{
+LongNumber LongNumber::operator * (const LongNumber& x) const {
+    int product = 0;
+    int a = std::abs(to_int(*this));
+    int b = std::abs(to_int(x));
+    int total_length = std::max(length, x.length);
+    int i = 0;
+    int k = 1;
+
+    while ((i < total_length) && (k <= total_length)) { 
+        product += (((a * (b % (int)pow(10, k))) * pow(10, i)));
+        b /= 10;
+        i++;
+    }
+    int sign_res = sign == x.sign ? POSITIVE : NEGATIVE;
+    LongNumber result(product * sign_res);
+    return result;
+}
+
+LongNumber LongNumber::operator / (const LongNumber& x) const {
+    int quotient = 0;
+    int result_sign;
+    int a = std::abs(to_int(*this));
+    int b = std::abs(to_int(x));
+
+    if (length < x.length) {
+        LongNumber result(0);
+        return result;
+    }
+    else if (a == b) {
+        result_sign = sign == x.sign ? POSITIVE : NEGATIVE;
+        LongNumber result(1 * result_sign);
+        return result;
+    }
+
+    else {
+        int main_point = a / pow(10, length - x.length) >= b ? pow(10, length - x.length) : pow(10, length - x.length - 1);
+        int digits_before_point = get_length(a / main_point);
+        int digits_after_point = length - digits_before_point;
+        int* tmp = new int[digits_after_point + 1];
+
+        for (int i = 0; i < digits_after_point; i++) {
+            tmp[i] = 0;
+        }
+
+        int number = a;
+        int j = 1;
+
+        while (number != (a / main_point))
+        {
+            int digit = number % 10;
+            number /= 10;
+            tmp[j] = digit;
+            j++;
+        }
+
+        int k = digits_after_point;
+        int i = a / pow(10, length - x.length) >= b ? length - x.length : length - x.length - 1; 
+        quotient += (a / main_point / b) * pow(10, i); 
+        i--;
+
+        int tmp_int = ((a / main_point) - (((a / main_point) / b) * b)) * 10 + tmp[k];
+        k--;
+        while ((i >= 0)) {
+
+            if (tmp_int / b <= 0) {  
+                i--;
+                tmp_int = tmp_int * 10 + tmp[k];
+                quotient += (tmp_int / b) * pow(10, i);
+                i--;
+                k--;
+                tmp_int = (tmp_int - (tmp_int / b) * b) * 10 + tmp[k];
+            }
+            else {
+                quotient += (tmp_int / b) * pow(10, i);
+                i--;
+                tmp_int = (tmp_int - (tmp_int / b) * b) * 10 + tmp[k];
+                k--;
+            }
+        }
+
+        result_sign = sign == x.sign ? POSITIVE : NEGATIVE;
+        LongNumber result(quotient * result_sign);
+        delete[] tmp;
+        return result;
+    }
+}
+
+LongNumber LongNumber::operator % (const LongNumber& x) const {
+    LongNumber q, r;
+
+    int a_int = std::abs(to_int(*this));
+    LongNumber a(a_int);
+
+    int b_int = std::abs(to_int(x));
+    LongNumber b(b_int);
+
+    q = a.operator/(b); 
+
+    if ((sign == POSITIVE) && (x.sign == POSITIVE) || ((sign == POSITIVE) && (x.sign == NEGATIVE))) {
+        r = a.operator-(q.operator*(b));
+    }
+    else if ((sign == NEGATIVE) && (x.sign == POSITIVE)) {
+        q.sign = NEGATIVE;
+        q = to_int(q) - 1;
+        q.length = get_length(to_int(q));
+        r = operator-(q.operator*(x));
+    }
+    else {
+        q.sign = POSITIVE;
+        q = to_int(q) + 1;
+        q.length = get_length(to_int(q));
+        r = operator-(q.operator*(x));
+    }
+    return r;
+}
+
+//вспомогательные функции
+int LongNumber::get_length(int x) const {
+    return ((bool)x * (int)log10(std::abs(x)) + 1);
+}
+
+int LongNumber::get_length(const char* const str) const {
+    if (!str) return 0;
+
+    int length = 0;
+    while (str[length] != END) {
+        length++;
+    }
+
+    return length;
+}
+
+bool LongNumber::is_negative() const {
+	return sign == NEGATIVE;
+}
+
+int LongNumber::reverse_digits(int num) const {
     int rev_num = 0;
     while (num > 0) {
         rev_num = rev_num * 10 + num % 10;
@@ -251,16 +393,15 @@ int LongNumber::reverse_digits(int num)
     return rev_num;
 }
 
-
-int LongNumber::get_length(int x) {  //распараллелить с get_digits, чтобы сделать private
-    return ((bool)x * (int)log10(abs(x)) + 1);
+int LongNumber::to_int(const LongNumber& x) const {
+    int result = 0;
+    int i = 0;
+    while (i < x.length) {
+        result += x.numbers[i] * pow(10, i);
+        i++;
+    }
+    return (x.sign == POSITIVE) ? result : (-1) * result;
 }
-
-bool LongNumber::is_negative() const {
-	return sign == NEGATIVE;
-}
-
-
 
 
 // ----------------------------------------------------------
@@ -268,8 +409,12 @@ bool LongNumber::is_negative() const {
 // ----------------------------------------------------------
 namespace KLikhosherstova {
     std::ostream& operator << (std::ostream& os, const LongNumber& x) {
-
-        os << *x.numbers;
+        if (x.sign == LongNumber::NEGATIVE) {
+            os << LongNumber::MINUS;
+        }
+        for (int i = 0; i < x.length; i++) {
+            os << x.numbers[x.length - i - 1];
+        }
         return os;
     }
 }

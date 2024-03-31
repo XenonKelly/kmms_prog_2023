@@ -17,6 +17,7 @@ namespace KLikhosherstova {
 
 	public:
 		LongNumber();
+		LongNumber(int value);
 		LongNumber(const char* const str);
 		LongNumber(const LongNumber& x);
 		LongNumber(LongNumber&& x);
@@ -24,28 +25,27 @@ namespace KLikhosherstova {
 		~LongNumber();
 
 		LongNumber& operator = (const char* const str);
+		LongNumber& operator = (int value);
 		LongNumber& operator = (const LongNumber& x);
 		LongNumber& operator = (LongNumber&& x);
 
-		bool operator==(const LongNumber& x);
-		bool operator!=(const LongNumber& x);
-		bool operator>(const LongNumber& x);
-		bool operator<(const LongNumber& x);
+		bool operator==(const LongNumber& x) const;
+		bool operator!=(const LongNumber& x) const;
+		bool operator>(const LongNumber& x) const;
+		bool operator<(const LongNumber& x) const;
 
-		LongNumber operator+(const LongNumber& x);
-		LongNumber operator-(const LongNumber& x);
-		LongNumber operator*(const LongNumber& x);
-		LongNumber operator/(const LongNumber& x);
-		LongNumber operator%(const LongNumber& x);
-		
+		LongNumber operator+(const LongNumber& x) const;
+		LongNumber operator-(const LongNumber& x) const;
+		LongNumber operator*(const LongNumber& x) const;
+		LongNumber operator/(const LongNumber& x) const;
+		LongNumber operator%(const LongNumber& x) const;
 
-		
-
-		int get_digits_number() const;
+		int get_length(int x) const;
+		int get_length(const char* const str) const;
 		bool is_negative() const;
-		int get_length(int x);
-		int reverse_digits(int x);
-
+		int reverse_digits(int x) const;
+		int to_int(const LongNumber& x) const;
+		
 		friend std::ostream& operator << (std::ostream& os, const LongNumber& x);
 
 	};
